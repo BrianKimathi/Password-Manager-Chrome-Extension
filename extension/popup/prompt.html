@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Save Credentials</title>
+    <style>
+      body {
+        background-color: #f3f4f6;
+        font-family: sans-serif;
+        padding: 1rem;
+        width: 320px;
+        min-height: 200px;
+        margin: 0;
+      }
+      h2 {
+        font-size: 1.1rem;
+        color: #1f2937;
+        text-align: center;
+      }
+      p {
+        color: #374151;
+        text-align: center;
+      }
+      .button-container {
+        display: flex;
+        gap: 0.5rem;
+      }
+      button {
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        color: white;
+        border: none;
+        cursor: pointer;
+        flex: 1;
+      }
+      #yesBtn {
+        background-color: #16a34a;
+      }
+      #yesBtn:hover {
+        background-color: #15803d;
+      }
+      #noBtn {
+        background-color: #dc2626;
+      }
+      #noBtn:hover {
+        background-color: #b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Save Login?</h2>
+    <p id="siteUrl"></p>
+    <p id="emailDisplay"></p>
+    <div class="button-container">
+      <button id="yesBtn">Yes</button>
+      <button id="noBtn">No</button>
+    </div>
+    <script src="prompt.js"></script>
+  </body>
+</html>

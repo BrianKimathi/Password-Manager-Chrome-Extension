@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Password Manager</title>
+    <style>
+      body {
+        background-color: #f3f4f6;
+        font-family: sans-serif;
+        padding: 1rem;
+        width: 320px;
+        min-height: 300px;
+        margin: 0;
+      }
+
+      #login,
+      #logged-in {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #1f2937;
+        text-align: center;
+        margin: 0;
+      }
+
+      input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        outline: none;
+        color: #374151;
+      }
+
+      input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+      }
+
+      .button-container {
+        display: flex;
+        gap: 0.5rem;
+        position: relative;
+      }
+
+      button {
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+      }
+
+      #loginBtn {
+        background-color: #2563eb;
+        flex: 1;
+      }
+
+      #loginBtn:hover {
+        background-color: #1d4ed8;
+      }
+
+      #registerBtn {
+        background-color: #16a34a;
+        flex: 1;
+      }
+
+      #registerBtn:hover {
+        background-color: #15803d;
+      }
+
+      #logoutBtn {
+        background-color: #dc2626;
+        width: 100%;
+      }
+
+      #logoutBtn:hover {
+        background-color: #b91c1c;
+      }
+
+      .lock-icon {
+        width: 24px;
+        height: 24px;
+        margin: 0 auto;
+        fill: #16a34a;
+      }
+
+      .spinner {
+        display: none;
+        width: 24px;
+        height: 24px;
+        border: 3px solid #d1d5db;
+        border-top: 3px solid #2563eb;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      @keyframes spin {
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login">
+      <h1>Password Manager</h1>
+      <input id="email" type="email" placeholder="Email" />
+      <input id="password" type="password" placeholder="Password" />
+      <div class="button-container">
+        <button id="loginBtn">Login</button>
+        <button id="registerBtn">Register</button>
+        <div id="spinner" class="spinner"></div>
+      </div>
+    </div>
+    <div id="logged-in" style="display: none">
+      <h1>Logged In</h1>
+      <svg
+        class="lock-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z"
+        />
+      </svg>
+      <button id="logoutBtn">Logout</button>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
