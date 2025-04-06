@@ -1,4 +1,5 @@
-Password Manager
+Password Manager Chrome Extension
+
 A secure, full-stack password management solution featuring a Chrome extension for autofill and password saving, paired with a Node.js backend and PostgreSQL database. Built as a portfolio project to demonstrate expertise in web development, browser extensions, and security practices.
 
 Features
