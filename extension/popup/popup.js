@@ -1,43 +1,118 @@
 // API_URL is defined in config.js (loaded before this script)
 
-// Utility to decode JWT and get expiration time
+// --- Token utilities ---
+
 function getTokenExpiration(token) {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000; // Convert to milliseconds
+    return payload.exp * 1000;
   } catch (e) {
-    console.error("Failed to decode token:", e);
     return 0;
   }
 }
 
-// Check if token is expired
 function isTokenExpired(expiration) {
   return expiration && Date.now() > expiration;
 }
 
-// Auto-logout function
-function startTokenExpirationCheck() {
+// --- Refresh token logic ---
+
+/**
+ * Attempt to refresh the access token using the stored refresh token.
+ * Returns the new token if successful, or null if refresh fails.
+ */
+async function refreshAccessToken() {
+  const { refreshToken } = await new Promise((resolve) =>
+    chrome.storage.local.get("refreshToken", resolve)
+  );
+
+  if (!refreshToken) return null;
+
+  try {
+    const resp = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    const data = await resp.json();
+    if (data.token) {
+      const expiration = getTokenExpiration(data.token);
+      await new Promise((resolve) =>
+        chrome.storage.local.set(
+          {
+            token: data.token,
+            tokenExpiration: expiration,
+            refreshToken: data.refreshToken,
+          },
+          resolve
+        )
+      );
+      return data.token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Start a silent refresh timer that refreshes the access token
+ * shortly before it expires. Falls back to logout if refresh fails.
+ */
+function startTokenRefreshTimer() {
   chrome.storage.local.get(
     ["token", "tokenExpiration"],
     ({ token, tokenExpiration }) => {
-      if (token && tokenExpiration) {
-        if (isTokenExpired(tokenExpiration)) {
-          logout();
-        } else {
-          const timeLeft = tokenExpiration - Date.now();
-          setTimeout(logout, timeLeft); // Auto-logout when token expires
-        }
+      if (!token || !tokenExpiration) return;
+
+      if (isTokenExpired(tokenExpiration)) {
+        // Try to refresh immediately if already expired
+        refreshAccessToken().then((newToken) => {
+          if (!newToken) performLogout();
+        });
+        return;
       }
+
+      // Refresh 2 minutes before expiry to give a safety margin
+      const timeUntilRefresh = Math.max(
+        0,
+        tokenExpiration - Date.now() - 120000
+      );
+      setTimeout(async () => {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          // Schedule the next refresh with the new token
+          startTokenRefreshTimer();
+        } else {
+          performLogout();
+        }
+      }, timeUntilRefresh);
     }
   );
 }
+
+// --- Login state persistence ---
+
+function saveLoginSession(data) {
+  const expiration = getTokenExpiration(data.token);
+  return new Promise((resolve) =>
+    chrome.storage.local.set(
+      {
+        token: data.token,
+        tokenExpiration: expiration,
+        refreshToken: data.refreshToken,
+      },
+      resolve
+    )
+  );
+}
+
+// --- UI event handlers ---
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   const spinner = document.getElementById("spinner");
-  console.log("Login clicked! Email:", email, "Password:", password);
 
   spinner.style.display = "block";
   try {
@@ -47,28 +122,14 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
       body: JSON.stringify({ email, password }),
     });
     const data = await response.json();
-    console.log("Login response:", data);
-    if (data.token) {
-      const expiration = getTokenExpiration(data.token);
-      chrome.storage.local.set(
-        { token: data.token, tokenExpiration: expiration },
-        () => {
-          console.log(
-            "Token stored:",
-            data.token,
-            "Expires at:",
-            new Date(expiration)
-          );
-          updateUI(true);
-          startTokenExpirationCheck(); // Start expiration check
-        }
-      );
+    if (data.token && data.refreshToken) {
+      await saveLoginSession(data);
+      updateUI(true);
+      startTokenRefreshTimer();
     } else {
-      console.log("No token received:", data);
       alert("Login failed: " + (data.error || "Unknown error"));
     }
   } catch (error) {
-    console.error("Login error:", error);
     alert("Login error: " + error.message);
   } finally {
     spinner.style.display = "none";
@@ -79,7 +140,6 @@ document.getElementById("registerBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   const spinner = document.getElementById("spinner");
-  console.log("Register clicked! Email:", email, "Password:", password);
 
   spinner.style.display = "block";
   try {
@@ -89,41 +149,60 @@ document.getElementById("registerBtn").addEventListener("click", async () => {
       body: JSON.stringify({ email, password }),
     });
     const data = await response.json();
-    console.log("Register response:", data);
     if (response.ok) {
       alert("Registration successful! Please log in.");
     } else {
       alert("Registration failed: " + (data.error || "Unknown error"));
     }
   } catch (error) {
-    console.error("Register error:", error);
     alert("Register error: " + error.message);
   } finally {
     spinner.style.display = "none";
   }
 });
 
-document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  // Notify the backend to revoke the refresh token
+  const { token, refreshToken } = await new Promise((resolve) =>
+    chrome.storage.local.get(["token", "refreshToken"], resolve)
+  );
+  if (refreshToken && token) {
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+    } catch {
+      // Silently ignore — local cleanup is the priority
+    }
+  }
+  performLogout();
+});
 
-function logout() {
-  chrome.storage.local.remove(["token", "tokenExpiration"], () => {
-    console.log("Token and expiration removed");
-    updateUI(false);
-  });
+function performLogout() {
+  chrome.storage.local.remove(
+    ["token", "tokenExpiration", "refreshToken"],
+    () => {
+      updateUI(false);
+    }
+  );
 }
 
-// Function to update UI based on login state
+// --- UI state management ---
+
 function updateUI(isLoggedIn) {
   const loginDiv = document.getElementById("login");
   const loggedInDiv = document.getElementById("logged-in");
   if (isLoggedIn) {
     loginDiv.style.display = "none";
     loggedInDiv.style.display = "flex";
-    console.log("UI updated to logged-in state");
   } else {
     loginDiv.style.display = "flex";
     loggedInDiv.style.display = "none";
-    console.log("UI updated to login state");
   }
 }
 
@@ -131,14 +210,8 @@ function updateUI(isLoggedIn) {
 chrome.storage.local.get(
   ["token", "tokenExpiration"],
   ({ token, tokenExpiration }) => {
-    console.log(
-      "Initial check - Token:",
-      token,
-      "Expiration:",
-      tokenExpiration
-    );
     const isLoggedIn = token && !isTokenExpired(tokenExpiration);
     updateUI(isLoggedIn);
-    if (isLoggedIn) startTokenExpirationCheck();
+    if (isLoggedIn) startTokenRefreshTimer();
   }
 );

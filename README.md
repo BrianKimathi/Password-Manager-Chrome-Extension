@@ -5,12 +5,14 @@ A full-stack password management solution with a Chrome extension for autofill a
 ## Features
 
 - User authentication with JWT-based login and registration
+- Refresh token rotation for persistent sessions without re-login
 - Save, retrieve, and autofill website credentials
 - Chrome extension popup for login and password management
 - Content scripts for automatic form detection and autofill prompts
 - Passwords hashed with bcrypt (user credentials) and encrypted with AES-256-CBC (site credentials)
 - Dynamic database table creation on startup
-- Input validation, CORS, and rate limiting for production readiness
+- Input validation, CORS, rate limiting, and centralized error handling
+- Optional HTTPS support
 
 ## Tech Stack
 
@@ -28,22 +30,29 @@ password-manager/
     config/
       db.js             -- Database connection and initialization
     controllers/
-      authController.js -- Register and login logic
+      authController.js -- Register, login, refresh token, logout
       passwordController.js -- Save and retrieve encrypted passwords
     middleware/
       authMiddleware.js -- JWT verification
+      errorHandler.js   -- Centralized error handling
       validate.js       -- Input validation
     routes/
       authRoutes.js     -- Auth API routes
       passwordRoutes.js -- Password CRUD routes
-    server.js           -- Express app entry point
+    tests/
+      setup.js          -- Jest test setup (env vars, mocks)
+      auth.test.js      -- Auth endpoint tests
+      passwords.test.js -- Password endpoint tests
+    app.js              -- Express app (separated for testing)
+    server.js           -- Entry point with optional HTTPS
   extension/
     popup/
       popup.html        -- Extension popup UI
-      popup.js          -- Popup logic (login, register, logout)
+      popup.js          -- Popup logic (login, register, refresh)
       popup.css         -- Popup styling
       prompt.html       -- Save credential prompt
       prompt.js         -- Save prompt logic
+    config.js           -- Shared extension configuration
     background.js       -- Service worker for autofill
     content.js          -- Form detection and autofill trigger
     manifest.json       -- Extension manifest (MV3)
@@ -80,6 +89,10 @@ password-manager/
    DB_PORT=5432
    JWT_SECRET=your_random_jwt_secret_key_at_least_32_chars
    ENCRYPTION_KEY=your_64_char_hex_key_generated_below
+
+   # Optional: HTTPS (set these to enable)
+   # SSL_CERT_PATH=./certificates/cert.pem
+   # SSL_KEY_PATH=./certificates/key.pem
    ```
 
    Generate a secure ENCRYPTION_KEY:
@@ -116,14 +129,24 @@ password-manager/
 
 - User passwords are hashed with bcrypt (10 salt rounds) before storage
 - Site credentials are encrypted with AES-256-CBC using a dedicated encryption key
-- JWT tokens (1-hour expiration) secure all password API endpoints
+- JWT access tokens (1-hour expiration) with refresh token rotation for secure session management
 - Rate limiting protects auth routes from brute-force attacks (10 attempts per 15 minutes)
 - Input validation ensures data integrity on all API endpoints
 - CORS is configured to allow only chrome extension and localhost origins
+- Centralized error handling prevents information leakage
+
+## Testing
+
+```
+cd backend
+npm test
+```
+
+The test suite uses Jest and Supertest with a mocked PostgreSQL pool, so no database is required to run tests.
 
 ## Deployment
 
-- Backend: Deploy to Heroku, Render, or AWS with a PostgreSQL add-on. Update API_URL in popup.js to match your deployed URL.
+- Backend: Deploy to Heroku, Render, or AWS with a PostgreSQL add-on. Update `API_URL` in `extension/config.js` to match your deployed URL. For HTTPS, set `SSL_CERT_PATH` and `SSL_KEY_PATH` in your environment, or rely on your hosting platform's TLS termination.
 - Extension: Package and publish to the Chrome Web Store (requires a developer account).
 
 ## License
