@@ -1,3 +1,5 @@
+importScripts("./config.js");
+
 // Utility to decode JWT and get expiration time
 function getTokenExpiration(token) {
   try {
@@ -46,8 +48,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
-        console.log("Using token:", token.slice(0, 10) + "...");
-        fetch("http://localhost:3000/api/passwords/list", {
+        fetch(`${API_URL}/passwords/list`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

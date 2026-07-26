@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/api";
+// API_URL is defined in config.js (loaded before this script)
 
 // Utility to decode JWT and get expiration time
 function getTokenExpiration(token) {

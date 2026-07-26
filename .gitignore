@@ -1,17 +1,29 @@
-# Ignore all .env files
-.env*
+# Environment files
+.env
+.env.local
+.env.production
 
-# Ignore node_modules
-node_modules/
+# Dependencies
+backend/node_modules/
 
-# Ignore build artifacts (if you add a build step later)
-dist/
-build/
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Ignore logs
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
 npm-debug.log*
 
-# Ignore OS files
-.DS_Store
-Thumbs.db
+# Build artifacts
+dist/
+build/
+
+# Claude Code
+.claude/

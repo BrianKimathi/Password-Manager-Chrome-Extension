@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const { url, email, password } = pendingCredentials;
-        fetch("http://localhost:3000/api/passwords/save", {
+        fetch(`${API_URL}/passwords/save`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

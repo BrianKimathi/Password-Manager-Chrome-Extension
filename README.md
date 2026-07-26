@@ -1,144 +1,131 @@
-Password Manager Chrome Extension
+# Password Manager - Chrome Extension
 
-A secure, full-stack password management solution featuring a Chrome extension for autofill and password saving, paired with a Node.js backend and PostgreSQL database. Built as a portfolio project to demonstrate expertise in web development, browser extensions, and security practices.
+A full-stack password management solution with a Chrome extension for autofill and credential storage, paired with a Node.js backend and PostgreSQL database.
 
-Features
-User Authentication: Register and log in securely with JWT-based authentication.
-Password Management: Save, retrieve, and autofill passwords for websites.
-Chrome Extension: Intuitive popup UI for login and password management, with content scripts for autofill and save prompts.
-Security: Passwords are hashed (bcrypt) for users and encrypted (AES-256-CBC) for stored site credentials.
-Dynamic Database: Automatically creates required tables if they don’t exist.
-Production-Ready: Modular architecture, environment variable configuration, and security best practices.
-Tech Stack
-Frontend: Chrome Extension (HTML, CSS, JavaScript)
-Backend: Node.js, Express.js
-Database: PostgreSQL
-Security: bcrypt, JWT, AES-256-CBC encryption
-Tools: npm, nodemon, dotenv
-Project Structure
-text
+## Features
 
-Collapse
+- User authentication with JWT-based login and registration
+- Save, retrieve, and autofill website credentials
+- Chrome extension popup for login and password management
+- Content scripts for automatic form detection and autofill prompts
+- Passwords hashed with bcrypt (user credentials) and encrypted with AES-256-CBC (site credentials)
+- Dynamic database table creation on startup
+- Input validation, CORS, and rate limiting for production readiness
 
-Wrap
+## Tech Stack
 
-Copy
+- Frontend: Chrome Extension (HTML, CSS, JavaScript)
+- Backend: Node.js, Express.js
+- Database: PostgreSQL
+- Security: bcrypt, JWT, AES-256-CBC encryption
+- Tools: npm, nodemon, dotenv
+
+## Project Structure
+
+```
 password-manager/
-├── backend/ # Node.js backend
-│ ├── config/ # Database configuration
-│ │ └── db.js
-│ ├── controllers/ # API logic
-│ │ ├── authController.js
-│ │ └── passwordController.js
-│ ├── middleware/ # Authentication middleware
-│ │ └── authMiddleware.js
-│ ├── routes/ # API routes
-│ │ ├── authRoutes.js
-│ │ └── passwordRoutes.js
-│ ├── .env # Environment variables
-│ └── server.js # Entry point
-├── extension/ # Chrome extension
-│ ├── popup/ # Popup UI
-│ │ ├── popup.html
-│ │ ├── popup.js
-│ │ └── popup.css
-│ ├── background.js # Background script for autofill
-│ ├── content.js # Content script for form detection
-│ └── manifest.json # Extension manifest
-└── README.md # Project documentation
+  backend/
+    config/
+      db.js             -- Database connection and initialization
+    controllers/
+      authController.js -- Register and login logic
+      passwordController.js -- Save and retrieve encrypted passwords
+    middleware/
+      authMiddleware.js -- JWT verification
+      validate.js       -- Input validation
+    routes/
+      authRoutes.js     -- Auth API routes
+      passwordRoutes.js -- Password CRUD routes
+    server.js           -- Express app entry point
+  extension/
+    popup/
+      popup.html        -- Extension popup UI
+      popup.js          -- Popup logic (login, register, logout)
+      popup.css         -- Popup styling
+      prompt.html       -- Save credential prompt
+      prompt.js         -- Save prompt logic
+    background.js       -- Service worker for autofill
+    content.js          -- Form detection and autofill trigger
+    manifest.json       -- Extension manifest (MV3)
+  README.md
+```
 
-Prerequisites
-Node.js (v16+ recommended)
-PostgreSQL (installed and running locally or via a service)
-Google Chrome (for extension testing)
-Setup Instructions
-Backend
-Navigate to the backend folder:
-bash
+## Prerequisites
 
-Collapse
+- Node.js (v16 or later)
+- PostgreSQL (running locally or via a cloud service)
+- Google Chrome (for extension testing)
 
-Wrap
+## Setup
 
-Copy
-cd backend
-Install dependencies:
-bash
+### Backend
 
-Collapse
+1. Navigate to the backend directory:
+   ```
+   cd backend
+   ```
 
-Wrap
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-Copy
-npm install
-Configure environment variables:
-Create a .env file in backend/ with the following:
-text
+3. Create a `.env` file in `backend/`:
+   ```
+   PORT=5000
+   DB_USER=your_postgres_user
+   DB_HOST=localhost
+   DB_NAME=password_manager
+   DB_PASSWORD=your_postgres_password
+   DB_PORT=5432
+   JWT_SECRET=your_random_jwt_secret_key_at_least_32_chars
+   ENCRYPTION_KEY=your_64_char_hex_key_generated_below
+   ```
 
-Collapse
+   Generate a secure ENCRYPTION_KEY:
+   ```
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
 
-Wrap
+   **Important:** The ENCRYPTION_KEY must be exactly 64 hexadecimal characters (32 bytes for AES-256). Unlike JWT_SECRET, this key must never change once set, as it encrypts all stored passwords. Rotating it would make existing saved credentials unrecoverable.
 
-Copy
-PORT=5000
-DB_USER=your_postgres_user
-DB_HOST=localhost
-DB_NAME=password_manager
-DB_PASSWORD=your_postgres_password
-DB_PORT=5432
-JWT_SECRET=your_random_secret_key_32_chars_long
-Start PostgreSQL:
-Ensure your PostgreSQL server is running and the credentials match your .env file.
-Run the backend:
-bash
+4. Ensure PostgreSQL is running and the credentials in your `.env` match your database setup.
 
-Collapse
+5. Start the backend:
+   ```
+   npm start
+   ```
+   The server runs on `http://localhost:5000` and initializes the database automatically.
 
-Wrap
+### Chrome Extension
 
-Copy
-npm start
-The server will run on http://localhost:5000 and initialize the database automatically.
-Chrome Extension
-Navigate to the extension folder:
-bash
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable Developer mode (toggle in the top-right corner)
+3. Click "Load unpacked" and select the `extension/` folder
+4. Click the extension icon in Chrome to open the popup
+5. Register or log in using the backend API
 
-Collapse
+## Usage
 
-Wrap
+- **Register / Login:** Use the extension popup to create an account or sign in
+- **Save Passwords:** When submitting a login form on any website, the extension prompts to save the credentials
+- **Autofill:** On saved sites, the extension automatically fills in your username and password
+- **View Passwords:** After logging in, the popup displays your saved passwords
 
-Copy
-cd extension
-Load the extension in Chrome:
-Open Chrome and go to chrome://extensions/.
-Enable "Developer mode" (top right).
-Click "Load unpacked" and select the extension/ folder.
-Test the extension:
-Click the extension icon in Chrome to open the popup.
-Register or log in using the backend API.
-Usage
-Register/Login: Use the extension popup to create an account or log in.
-Save Passwords: When submitting a login form on any website, the extension prompts to save the credentials.
-Autofill: On saved sites, the extension automatically fills in your username and password.
-View Passwords: After logging in, the popup displays your saved passwords.
-Security Measures
-User Passwords: Hashed with bcrypt before storage.
-Site Passwords: Encrypted with AES-256-CBC using a key derived from the JWT secret.
-Authentication: JWT tokens secure all API endpoints.
-Future Enhancements: Add CORS, rate limiting, and HTTPS for production deployment.
-Deployment
-Backend: Deploy to Heroku, Render, or AWS with a PostgreSQL add-on. Update the API_URL in popup.js to your deployed URL.
-Extension: Package and publish to the Chrome Web Store (requires a developer account).
-Development Notes
-Error Handling: Basic error responses are implemented; expand with custom middleware for production.
-Scalability: The modular structure supports adding features like password categories or OAuth.
-Learning Goals: This project taught me full-stack development, browser extension APIs, and security fundamentals.
-Contributing
-Feel free to fork this repository and submit pull requests with improvements! Suggestions for better security, UI, or features are welcome.
+## Security Measures
 
-License
-This project is licensed under the MIT License - see the file for details (create one if you wish to include it).
+- User passwords are hashed with bcrypt (10 salt rounds) before storage
+- Site credentials are encrypted with AES-256-CBC using a dedicated encryption key
+- JWT tokens (1-hour expiration) secure all password API endpoints
+- Rate limiting protects auth routes from brute-force attacks (10 attempts per 15 minutes)
+- Input validation ensures data integrity on all API endpoints
+- CORS is configured to allow only chrome extension and localhost origins
 
-Acknowledgments
-Built with guidance from online resources and the xAI Grok assistant.
-Inspired by real-world password managers like LastPass and 1Password.
+## Deployment
+
+- Backend: Deploy to Heroku, Render, or AWS with a PostgreSQL add-on. Update API_URL in popup.js to match your deployed URL.
+- Extension: Package and publish to the Chrome Web Store (requires a developer account).
+
+## License
+
+MIT
